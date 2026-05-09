@@ -2,7 +2,7 @@ import type {
   CaptchaCheckPayload,
   CaptchaCheckResponse,
   CaptchaGetResponse,
-} from './types'
+} from '../components/captcha/types'
 
 const JSON_HEADERS = {
   Accept: '*/*',

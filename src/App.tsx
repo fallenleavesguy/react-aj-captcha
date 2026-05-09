@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { reqCheck, reqGet } from './components/captcha/api'
+import { reqCheck, reqGet } from './api/captcha'
 import Verify from './components/captcha/Verify'
 import type {
   CaptchaCheckPayload,
