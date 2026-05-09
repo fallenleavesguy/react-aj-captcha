@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { reqCheck, reqGet } from './api'
+import styles from './VerifySlide.module.scss'
 import type {
   CaptchaGetResult,
   SlidePoint,
@@ -334,27 +335,27 @@ export default function VerifySlide({
     leftBarWidth !== undefined ? leftBarWidth : barSize.height
 
   return (
-    <div className="captcha-slide">
+    <div className={styles['captcha-slide']}>
       {type === '2' ? (
         <div
-          className="verify-img-out"
+          className={styles['verify-img-out']}
           style={{ height: `${imageHeight + vSpace}px` }}
         >
           <div
             ref={panelRef}
-            className="verify-img-panel"
+            className={styles['verify-img-panel']}
             style={{ width: imgSize.width, height: imgSize.height }}
           >
             {captcha ? (
               <img
                 src={`data:image/png;base64,${captcha.backgroundImage}`}
                 alt=""
-                className="verify-background-image"
+                className={styles['verify-background-image']}
               />
             ) : null}
             <button
               type="button"
-              className="verify-refresh"
+              className={styles['verify-refresh']}
               onClick={() => void refresh()}
               style={{ display: showRefresh ? 'flex' : 'none' }}
               aria-label="刷新验证码"
@@ -362,7 +363,9 @@ export default function VerifySlide({
               ↻
             </button>
             {tipWords ? (
-              <span className={`verify-tips ${passFlag ? 'suc-bg' : 'err-bg'}`}>
+              <span
+                className={`${styles['verify-tips']} ${passFlag ? styles['suc-bg'] : styles['err-bg']}`}
+              >
                 {tipWords}
               </span>
             ) : null}
@@ -372,16 +375,16 @@ export default function VerifySlide({
 
       <div
         ref={barAreaRef}
-        className="verify-bar-area"
+        className={styles['verify-bar-area']}
         style={{
           width: imgSize.width,
           height: barSize.height,
           lineHeight: barSize.height,
         }}
       >
-        <span className="verify-msg">{text}</span>
+        <span className={styles['verify-msg']}>{text}</span>
         <div
-          className="verify-left-bar"
+          className={styles['verify-left-bar']}
           style={{
             width: leftBarActualWidth,
             height: barSize.height,
@@ -389,9 +392,9 @@ export default function VerifySlide({
             transition: transitionWidth,
           }}
         >
-          <span className="verify-msg">{finishText}</span>
+          <span className={styles['verify-msg']}>{finishText}</span>
           <div
-            className="verify-move-block"
+            className={styles['verify-move-block']}
             onTouchStart={start}
             onMouseDown={start}
             style={{
@@ -402,7 +405,10 @@ export default function VerifySlide({
               transition: transitionLeft,
             }}
           >
-            <i className={`verify-icon ${iconClass}`} style={{ color: iconColor }}>
+            <i
+              className={`${styles['verify-icon']} ${styles[iconClass]}`}
+              style={{ color: iconColor }}
+            >
               {iconClass === 'icon-check'
                 ? '✓'
                 : iconClass === 'icon-close'
@@ -411,7 +417,7 @@ export default function VerifySlide({
             </i>
             {type === '2' && captcha ? (
               <div
-                className="verify-sub-block"
+                className={styles['verify-sub-block']}
                 style={{
                   width: `${sliderBlockWidth}px`,
                   height: `${imageHeight}px`,
@@ -422,7 +428,7 @@ export default function VerifySlide({
                 <img
                   src={`data:image/png;base64,${captcha.sliderImage}`}
                   alt=""
-                  className="verify-slider-image"
+                  className={styles['verify-slider-image']}
                 />
               </div>
             ) : null}

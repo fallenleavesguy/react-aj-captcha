@@ -1,6 +1,6 @@
 import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
 import VerifySlide from './VerifySlide'
-import './captcha.css'
+import styles from './Verify.module.scss'
 import type {
   VerifyMode,
   VerifyRef,
@@ -37,10 +37,6 @@ const Verify = forwardRef<VerifyRef, VerifyProps>(function Verify(
   const [clickShow, setClickShow] = useState(false)
   const slideRefreshRef = useRef<(() => void) | null>(null)
 
-  const refresh = () => {
-    void slideRefreshRef.current?.()
-  }
-
   const closeBox = () => {
     setClickShow(false)
   }
@@ -51,28 +47,34 @@ const Verify = forwardRef<VerifyRef, VerifyProps>(function Verify(
         setClickShow(true)
       }
     },
-    refresh,
     close: closeBox,
   }))
 
   const showBox = mode === 'pop' ? clickShow : true
 
   return (
-    <div className={mode === 'pop' ? 'mask' : ''} style={{ display: showBox ? 'block' : 'none' }}>
+    <div
+      className={mode === 'pop' ? styles.mask : undefined}
+      style={{ display: showBox ? 'block' : 'none' }}
+    >
       <div
-        className={mode === 'pop' ? 'verifybox' : ''}
+        className={mode === 'pop' ? styles['verify-box'] : undefined}
         style={{ maxWidth: `${parseInt(imgSize?.width ?? '310', 10) + 30}px` }}
       >
         {mode === 'pop' ? (
-          <div className="verifybox-top">
+          <div className={styles['verify-box-top']}>
             请完成安全验证
-            <button type="button" className="verifybox-close" onClick={closeBox}>
+            <button
+              type="button"
+              className={styles['verify-box-close']}
+              onClick={closeBox}
+            >
               ✕
             </button>
           </div>
         ) : null}
         <div
-          className="verifybox-bottom"
+          className={styles['verify-box-bottom']}
           style={{ padding: mode === 'pop' ? '15px' : '0' }}
         >
           <VerifySlide

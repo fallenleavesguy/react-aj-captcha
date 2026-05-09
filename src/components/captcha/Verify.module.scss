@@ -1,0 +1,48 @@
+.mask {
+  position: fixed;
+  inset: 0;
+  z-index: 1001;
+  width: 100%;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.verify-box {
+  position: relative;
+  left: 50%;
+  top: 50%;
+  box-sizing: border-box;
+  transform: translate(-50%, -50%);
+  border: 1px solid #e4e7eb;
+  border-radius: 2px;
+  background-color: #fff;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+.verify-box-top {
+  position: relative;
+  box-sizing: border-box;
+  height: 50px;
+  padding: 0 15px;
+  border-bottom: 1px solid #e4e7eb;
+  color: #45494c;
+  font-size: 16px;
+  line-height: 50px;
+  text-align: left;
+}
+
+.verify-box-bottom {
+  box-sizing: border-box;
+}
+
+.verify-box-close {
+  position: absolute;
+  top: 12px;
+  right: 9px;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16px;
+}

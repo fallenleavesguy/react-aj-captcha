@@ -27,13 +27,6 @@ function App() {
           >
             打开验证
           </button>
-          <button
-            type="button"
-            className="demo-button"
-            onClick={() => verifyRef.current?.refresh()}
-          >
-            刷新验证码
-          </button>
         </div>
 
         <div className="demo-status">

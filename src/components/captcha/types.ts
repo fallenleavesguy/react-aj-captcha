@@ -60,6 +60,5 @@ export interface VerifySlideProps {
 
 export interface VerifyRef {
   show: () => void
-  refresh: () => void
   close: () => void
 }
