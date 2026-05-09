@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { reqCheck, reqGet } from './api'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import styles from './VerifySlide.module.scss'
 import type {
   CaptchaGetResult,
+  CaptchaCheckPayload,
   SlidePoint,
   VerifySlideProps,
 } from './types'
@@ -31,6 +31,8 @@ export default function VerifySlide({
   onReady,
   onSuccess,
   onError,
+  onGetCaptcha,
+  onVerifyCaptcha,
   onRequestClose,
   onRequestHide,
   onRegisterRefresh,
@@ -70,6 +72,15 @@ export default function VerifySlide({
 
   const blockHalfWidth = parseInt(blockSize.width, 10) / 2
   const sliderBlockWidth = Math.floor((panelWidth * 47) / 310)
+  const backgroundImageSrc = useMemo(
+    () =>
+      captchaData ? `data:image/png;base64,${captchaData.backgroundImage}` : '',
+    [captchaData],
+  )
+  const sliderImageSrc = useMemo(
+    () => (captchaData ? `data:image/png;base64,${captchaData.sliderImage}` : ''),
+    [captchaData],
+  )
 
   const getClientX = (event: MouseEvent | TouchEvent | React.MouseEvent | React.TouchEvent) => {
     if ('touches' in event && event.touches.length > 0) {
@@ -124,13 +135,13 @@ export default function VerifySlide({
   }, [panelWidth, sliderOffset])
 
   const loadCaptcha = useCallback(async () => {
-    const response = await reqGet()
-    if (response.success && response.result) {
-      setCaptchaData(response.result)
+    const nextCaptchaData = await onGetCaptcha()
+    if (nextCaptchaData) {
+      setCaptchaData(nextCaptchaData)
       return
     }
-    setStatusMessage(response.message || '获取验证码失败')
-  }, [])
+    setStatusMessage('获取验证码失败')
+  }, [onGetCaptcha])
 
   const resetState = useCallback(() => {
     setIsRefreshVisible(true)
@@ -203,19 +214,20 @@ export default function VerifySlide({
 
     setIsDragging(false)
     const slidePoint = buildSlidePoint(getMoveDistance())
-    const response = await reqCheck({
+    const verifyPayload: CaptchaCheckPayload = {
       captchaId: captchaData.captchaId,
       token: captchaData.token,
       slidePoint,
-    })
+    }
+    const isPassed = await onVerifyCaptcha(verifyPayload)
 
-    if (response.success) {
+    if (isPassed) {
       handleSuccess(slidePoint)
       return
     }
 
-    handleFail(response.message)
-  }, [captchaData, getMoveDistance, handleFail, handleSuccess, hasCompleted, isDragging])
+    handleFail()
+  }, [captchaData, getMoveDistance, handleFail, handleSuccess, hasCompleted, isDragging, onVerifyCaptcha])
 
   const move = useCallback((event: MouseEvent | TouchEvent) => {
     if (!isDragging || hasCompleted || !barAreaRef.current) {
@@ -344,7 +356,7 @@ export default function VerifySlide({
         >
           {captchaData ? (
             <img
-              src={`data:image/png;base64,${captchaData.backgroundImage}`}
+              src={backgroundImageSrc}
               alt=""
               className={styles['verify-background-image']}
             />
@@ -420,7 +432,7 @@ export default function VerifySlide({
                 }}
               >
                 <img
-                  src={`data:image/png;base64,${captchaData.sliderImage}`}
+                  src={sliderImageSrc}
                   alt=""
                   className={styles['verify-slider-image']}
                 />

@@ -2,6 +2,7 @@ import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
 import VerifySlide from './VerifySlide'
 import styles from './Verify.module.scss'
 import type {
+  VerifyApiHandlers,
   VerifyMode,
   VerifyRef,
   VerifySlideProps,
@@ -18,6 +19,8 @@ interface VerifyProps {
   onReady?: () => void
   onSuccess?: (payload: VerifySuccessPayload) => void
   onError?: () => void
+  onGetCaptcha: VerifyApiHandlers['onGetCaptcha']
+  onVerifyCaptcha: VerifyApiHandlers['onVerifyCaptcha']
 }
 
 const Verify = forwardRef<VerifyRef, VerifyProps>(function Verify(
@@ -31,6 +34,8 @@ const Verify = forwardRef<VerifyRef, VerifyProps>(function Verify(
     onReady,
     onSuccess,
     onError,
+    onGetCaptcha,
+    onVerifyCaptcha,
   },
   ref,
 ) {
@@ -88,6 +93,8 @@ const Verify = forwardRef<VerifyRef, VerifyProps>(function Verify(
             onReady={onReady}
             onSuccess={onSuccess}
             onError={onError}
+            onGetCaptcha={onGetCaptcha}
+            onVerifyCaptcha={onVerifyCaptcha}
             onRequestClose={closeBox}
             onRequestHide={() => setClickShow(false)}
             onRegisterRefresh={(refreshHandler) => {

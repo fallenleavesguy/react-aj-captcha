@@ -41,6 +41,11 @@ export interface VerifySuccessPayload {
   captchaVerification: string
 }
 
+export interface VerifyApiHandlers {
+  onGetCaptcha: () => Promise<CaptchaGetResult | null>
+  onVerifyCaptcha: (payload: CaptchaCheckPayload) => Promise<boolean>
+}
+
 export interface VerifySlideProps {
   mode?: VerifyMode
   visible?: boolean
@@ -52,6 +57,8 @@ export interface VerifySlideProps {
   onReady?: () => void
   onSuccess?: (payload: VerifySuccessPayload) => void
   onError?: () => void
+  onGetCaptcha: VerifyApiHandlers['onGetCaptcha']
+  onVerifyCaptcha: VerifyApiHandlers['onVerifyCaptcha']
   onRequestClose?: () => void
   onRequestHide?: () => void
   onRegisterRefresh?: (refresh: () => void) => void

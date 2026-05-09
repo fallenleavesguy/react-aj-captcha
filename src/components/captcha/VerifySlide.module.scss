@@ -1,5 +1,7 @@
 .captcha-slide {
   position: relative;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .verify-img-out {

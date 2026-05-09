@@ -1,6 +1,11 @@
 import { useRef, useState } from 'react'
+import { reqCheck, reqGet } from './components/captcha/api'
 import Verify from './components/captcha/Verify'
-import type { VerifyRef, VerifySuccessPayload } from './components/captcha/types'
+import type {
+  CaptchaCheckPayload,
+  VerifyRef,
+  VerifySuccessPayload,
+} from './components/captcha/types'
 import './App.css'
 
 function App() {
@@ -44,6 +49,14 @@ function App() {
         ref={verifyRef}
         mode="pop"
         explain="向右滑动完成验证"
+        onGetCaptcha={async () => {
+          const response = await reqGet()
+          return response.success ? response.result : null
+        }}
+        onVerifyCaptcha={async (payload: CaptchaCheckPayload) => {
+          const response = await reqCheck(payload)
+          return response.success
+        }}
         onReady={() => {
           setStatusText('验证码已就绪')
         }}
