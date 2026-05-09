@@ -23,7 +23,6 @@ const DEFAULT_BAR_SIZE = { width: '310px', height: '40px' }
 export default function VerifySlide({
   mode = 'fixed',
   visible = true,
-  type = '2',
   vSpace = 5,
   explain = '向右滑动完成验证',
   imgSize = DEFAULT_IMG_SIZE,
@@ -39,39 +38,38 @@ export default function VerifySlide({
   const barAreaRef = useRef<HTMLDivElement | null>(null)
   const panelRef = useRef<HTMLDivElement | null>(null)
 
-  const [captcha, setCaptcha] = useState<CaptchaGetResult | null>(null)
-  const [tipWords, setTipWords] = useState('')
-  const [text, setText] = useState(explain)
-  const [finishText, setFinishText] = useState('')
-  const [passFlag, setPassFlag] = useState(false)
-  const [showRefresh, setShowRefresh] = useState(true)
-  const [moveBlockLeft, setMoveBlockLeft] = useState<string | number>(0)
-  const [leftBarWidth, setLeftBarWidth] = useState<string | number | undefined>(
+  const [captchaData, setCaptchaData] = useState<CaptchaGetResult | null>(null)
+  const [statusMessage, setStatusMessage] = useState('')
+  const [instructionText, setInstructionText] = useState(explain)
+  const [isVerified, setIsVerified] = useState(false)
+  const [isRefreshVisible, setIsRefreshVisible] = useState(true)
+  const [sliderOffset, setSliderOffset] = useState<string | number>(0)
+  const [progressWidth, setProgressWidth] = useState<string | number | undefined>(
     undefined,
   )
-  const [moveBlockBackgroundColor, setMoveBlockBackgroundColor] = useState(
+  const [sliderHandleColor, setSliderHandleColor] = useState(
     UI_COLORS.white,
   )
-  const [leftBarBorderColor, setLeftBarBorderColor] = useState(UI_COLORS.border)
+  const [progressBorderColor, setProgressBorderColor] = useState(UI_COLORS.border)
   const [iconColor, setIconColor] = useState(UI_COLORS.black)
-  const [iconClass, setIconClass] = useState<'icon-right' | 'icon-check' | 'icon-close'>('icon-right')
-  const [transitionLeft, setTransitionLeft] = useState('')
-  const [transitionWidth, setTransitionWidth] = useState('')
+  const [sliderIconClass, setSliderIconClass] = useState<'icon-right' | 'icon-check' | 'icon-close'>('icon-right')
+  const [sliderOffsetTransition, setSliderOffsetTransition] = useState('')
+  const [progressWidthTransition, setProgressWidthTransition] = useState('')
   const [isDragging, setIsDragging] = useState(false)
-  const [isEnd, setIsEnd] = useState(false)
-  const [renderedImgWidth, setRenderedImgWidth] = useState(
+  const [hasCompleted, setHasCompleted] = useState(false)
+  const [panelWidth, setPanelWidth] = useState(
     parseInt(imgSize.width, 10),
   )
-  const [imageHeight, setImageHeight] = useState(parseInt(imgSize.height, 10))
+  const [panelHeight, setPanelHeight] = useState(parseInt(imgSize.height, 10))
 
-  const startLeftRef = useRef(0)
-  const startMoveTimeRef = useRef(0)
-  const endMoveTimeRef = useRef(0)
-  const wasVisibleRef = useRef(false)
+  const dragStartOffsetRef = useRef(0)
+  const dragStartTimeRef = useRef(0)
+  const dragEndTimeRef = useRef(0)
+  const hasInitializedVisibleRef = useRef(false)
   const onReadyRef = useRef(onReady)
 
   const blockHalfWidth = parseInt(blockSize.width, 10) / 2
-  const sliderBlockWidth = Math.floor((renderedImgWidth * 47) / 310)
+  const sliderBlockWidth = Math.floor((panelWidth * 47) / 310)
 
   const getClientX = (event: MouseEvent | TouchEvent | React.MouseEvent | React.TouchEvent) => {
     if ('touches' in event && event.touches.length > 0) {
@@ -81,30 +79,30 @@ export default function VerifySlide({
   }
 
   const setDraggingStyle = () => {
-    setMoveBlockBackgroundColor(UI_COLORS.active)
-    setLeftBarBorderColor(UI_COLORS.active)
+    setSliderHandleColor(UI_COLORS.active)
+    setProgressBorderColor(UI_COLORS.active)
     setIconColor(UI_COLORS.white)
   }
 
   const setSuccessStyle = () => {
-    setMoveBlockBackgroundColor(UI_COLORS.success)
-    setLeftBarBorderColor(UI_COLORS.success)
+    setSliderHandleColor(UI_COLORS.success)
+    setProgressBorderColor(UI_COLORS.success)
     setIconColor(UI_COLORS.white)
-    setIconClass('icon-check')
+    setSliderIconClass('icon-check')
   }
 
   const setErrorStyle = () => {
-    setMoveBlockBackgroundColor(UI_COLORS.error)
-    setLeftBarBorderColor(UI_COLORS.error)
+    setSliderHandleColor(UI_COLORS.error)
+    setProgressBorderColor(UI_COLORS.error)
     setIconColor(UI_COLORS.white)
-    setIconClass('icon-close')
+    setSliderIconClass('icon-close')
   }
 
   const resetTrackStyle = () => {
-    setLeftBarBorderColor(UI_COLORS.border)
-    setMoveBlockBackgroundColor(UI_COLORS.white)
+    setProgressBorderColor(UI_COLORS.border)
+    setSliderHandleColor(UI_COLORS.white)
     setIconColor(UI_COLORS.black)
-    setIconClass('icon-right')
+    setSliderIconClass('icon-right')
   }
 
   const buildSlidePoint = (distance: number): SlidePoint => ({
@@ -114,38 +112,37 @@ export default function VerifySlide({
 
   const buildCaptchaVerification = useCallback((slidePoint: SlidePoint) =>
     JSON.stringify({
-      captchaId: captcha?.captchaId ?? '',
-      token: captcha?.token ?? '',
+      captchaId: captchaData?.captchaId ?? '',
+      token: captchaData?.token ?? '',
       slidePoint,
-    }), [captcha])
+    }), [captchaData])
 
   const getMoveDistance = useCallback(() => {
     const currentLeft =
-      parseInt(String(moveBlockLeft ?? 0).replace('px', ''), 10) || 0
-    return (currentLeft * 310) / renderedImgWidth
-  }, [moveBlockLeft, renderedImgWidth])
+      parseInt(String(sliderOffset ?? 0).replace('px', ''), 10) || 0
+    return (currentLeft * 310) / panelWidth
+  }, [panelWidth, sliderOffset])
 
   const loadCaptcha = useCallback(async () => {
     const response = await reqGet()
     if (response.success && response.result) {
-      setCaptcha(response.result)
+      setCaptchaData(response.result)
       return
     }
-    setTipWords(response.message || '获取验证码失败')
+    setStatusMessage(response.message || '获取验证码失败')
   }, [])
 
   const resetState = useCallback(() => {
-    setShowRefresh(true)
-    setFinishText('')
-    setTransitionLeft('left .3s')
-    setTransitionWidth('width .3s')
-    setMoveBlockLeft(0)
-    setLeftBarWidth(undefined)
-    setIsEnd(false)
+    setIsRefreshVisible(true)
+    setSliderOffsetTransition('left .3s')
+    setProgressWidthTransition('width .3s')
+    setSliderOffset(0)
+    setProgressWidth(undefined)
+    setHasCompleted(false)
     setIsDragging(false)
-    setPassFlag(false)
+    setIsVerified(false)
     resetTrackStyle()
-    setText(explain)
+    setInstructionText(explain)
   }, [explain])
 
   const refresh = useCallback(async () => {
@@ -155,19 +152,19 @@ export default function VerifySlide({
     }
     await loadCaptcha()
     window.setTimeout(() => {
-      setTransitionWidth('')
-      setTransitionLeft('')
-      setText(explain)
+      setProgressWidthTransition('')
+      setSliderOffsetTransition('')
+      setInstructionText(explain)
     }, 300)
   }, [explain, loadCaptcha, resetState, visible])
 
   const handleSuccess = useCallback((slidePoint: SlidePoint) => {
     setSuccessStyle()
-    setShowRefresh(false)
-    setIsEnd(true)
-    setPassFlag(true)
-    setTipWords(
-      `${((endMoveTimeRef.current - startMoveTimeRef.current) / 1000).toFixed(2)}s验证成功`,
+    setIsRefreshVisible(false)
+    setHasCompleted(true)
+    setIsVerified(true)
+    setStatusMessage(
+      `${((dragEndTimeRef.current - dragStartTimeRef.current) / 1000).toFixed(2)}s验证成功`,
     )
 
     if (mode === 'pop') {
@@ -179,7 +176,7 @@ export default function VerifySlide({
 
     const captchaVerification = buildCaptchaVerification(slidePoint)
     window.setTimeout(() => {
-      setTipWords('')
+      setStatusMessage('')
       onRequestClose?.()
       onSuccess?.({ captchaVerification })
     }, 1000)
@@ -187,28 +184,28 @@ export default function VerifySlide({
 
   const handleFail = useCallback((message?: string) => {
     setErrorStyle()
-    setPassFlag(false)
-    setTipWords(message || '验证失败')
+    setIsVerified(false)
+    setStatusMessage(message || '验证失败')
     onError?.()
     window.setTimeout(() => {
       void refresh()
     }, 1000)
     window.setTimeout(() => {
-      setTipWords('')
+      setStatusMessage('')
     }, 1000)
   }, [onError, refresh])
 
   const end = useCallback(async () => {
-    endMoveTimeRef.current = Date.now()
-    if (!isDragging || isEnd || !captcha) {
+    dragEndTimeRef.current = Date.now()
+    if (!isDragging || hasCompleted || !captchaData) {
       return
     }
 
     setIsDragging(false)
     const slidePoint = buildSlidePoint(getMoveDistance())
     const response = await reqCheck({
-      captchaId: captcha.captchaId,
-      token: captcha.token,
+      captchaId: captchaData.captchaId,
+      token: captchaData.token,
       slidePoint,
     })
 
@@ -218,44 +215,44 @@ export default function VerifySlide({
     }
 
     handleFail(response.message)
-  }, [captcha, getMoveDistance, handleFail, handleSuccess, isDragging, isEnd])
+  }, [captchaData, getMoveDistance, handleFail, handleSuccess, hasCompleted, isDragging])
 
   const move = useCallback((event: MouseEvent | TouchEvent) => {
-    if (!isDragging || isEnd || !barAreaRef.current) {
+    if (!isDragging || hasCompleted || !barAreaRef.current) {
       return
     }
 
-    let moveBlockOffset =
+    let nextSliderOffset =
       getClientX(event) - barAreaRef.current.getBoundingClientRect().left
     const maxOffset = barAreaRef.current.offsetWidth - blockHalfWidth - 2
     const minOffset = blockHalfWidth
 
-    if (moveBlockOffset >= maxOffset) {
-      moveBlockOffset = maxOffset
+    if (nextSliderOffset >= maxOffset) {
+      nextSliderOffset = maxOffset
     }
-    if (moveBlockOffset <= minOffset) {
-      moveBlockOffset = minOffset
+    if (nextSliderOffset <= minOffset) {
+      nextSliderOffset = minOffset
     }
 
-    const leftValue = `${moveBlockOffset - startLeftRef.current}px`
-    setMoveBlockLeft(leftValue)
-    setLeftBarWidth(leftValue)
-  }, [blockHalfWidth, isDragging, isEnd])
+    const nextLeftValue = `${nextSliderOffset - dragStartOffsetRef.current}px`
+    setSliderOffset(nextLeftValue)
+    setProgressWidth(nextLeftValue)
+  }, [blockHalfWidth, hasCompleted, isDragging])
 
   const start = useCallback((event: React.MouseEvent | React.TouchEvent) => {
-    if (isEnd || !barAreaRef.current) {
+    if (hasCompleted || !barAreaRef.current) {
       return
     }
 
-    startLeftRef.current = Math.floor(
+    dragStartOffsetRef.current = Math.floor(
       getClientX(event) - barAreaRef.current.getBoundingClientRect().left,
     )
-    startMoveTimeRef.current = Date.now()
-    setText('')
+    dragStartTimeRef.current = Date.now()
+    setInstructionText('')
     setDraggingStyle()
     event.stopPropagation()
     setIsDragging(true)
-  }, [isEnd])
+  }, [hasCompleted])
 
   useEffect(() => {
     onReadyRef.current = onReady
@@ -263,15 +260,15 @@ export default function VerifySlide({
 
   useEffect(() => {
     if (!visible) {
-      wasVisibleRef.current = false
+      hasInitializedVisibleRef.current = false
       return
     }
 
-    if (wasVisibleRef.current) {
+    if (hasInitializedVisibleRef.current) {
       return
     }
 
-    wasVisibleRef.current = true
+    hasInitializedVisibleRef.current = true
     queueMicrotask(() => {
       void refresh().then(() => {
         onReadyRef.current?.()
@@ -290,8 +287,8 @@ export default function VerifySlide({
       if (!panelRef.current) {
         return
       }
-      setRenderedImgWidth(panelRef.current.clientWidth || parseInt(imgSize.width, 10))
-      setImageHeight(panelRef.current.clientHeight || parseInt(imgSize.height, 10))
+      setPanelWidth(panelRef.current.clientWidth || parseInt(imgSize.width, 10))
+      setPanelHeight(panelRef.current.clientHeight || parseInt(imgSize.height, 10))
     }
 
     updatePanelSize()
@@ -306,7 +303,7 @@ export default function VerifySlide({
     return () => {
       observer.disconnect()
     }
-  }, [imgSize.height, imgSize.width, captcha])
+  }, [captchaData, imgSize.height, imgSize.width])
 
   useEffect(() => {
     const handleMouseMove = (event: MouseEvent) => move(event)
@@ -331,47 +328,45 @@ export default function VerifySlide({
     }
   }, [end, move])
 
-  const leftBarActualWidth =
-    leftBarWidth !== undefined ? leftBarWidth : barSize.height
+  const progressActualWidth =
+    progressWidth !== undefined ? progressWidth : barSize.height
 
   return (
     <div className={styles['captcha-slide']}>
-      {type === '2' ? (
+      <div
+        className={styles['verify-img-out']}
+        style={{ height: `${panelHeight + vSpace}px` }}
+      >
         <div
-          className={styles['verify-img-out']}
-          style={{ height: `${imageHeight + vSpace}px` }}
+          ref={panelRef}
+          className={styles['verify-img-panel']}
+          style={{ width: imgSize.width, height: imgSize.height }}
         >
-          <div
-            ref={panelRef}
-            className={styles['verify-img-panel']}
-            style={{ width: imgSize.width, height: imgSize.height }}
+          {captchaData ? (
+            <img
+              src={`data:image/png;base64,${captchaData.backgroundImage}`}
+              alt=""
+              className={styles['verify-background-image']}
+            />
+          ) : null}
+          <button
+            type="button"
+            className={styles['verify-refresh']}
+            onClick={() => void refresh()}
+            style={{ display: isRefreshVisible ? 'flex' : 'none' }}
+            aria-label="刷新验证码"
           >
-            {captcha ? (
-              <img
-                src={`data:image/png;base64,${captcha.backgroundImage}`}
-                alt=""
-                className={styles['verify-background-image']}
-              />
-            ) : null}
-            <button
-              type="button"
-              className={styles['verify-refresh']}
-              onClick={() => void refresh()}
-              style={{ display: showRefresh ? 'flex' : 'none' }}
-              aria-label="刷新验证码"
+            ↻
+          </button>
+          {statusMessage ? (
+            <span
+              className={`${styles['verify-tips']} ${isVerified ? styles['suc-bg'] : styles['err-bg']}`}
             >
-              ↻
-            </button>
-            {tipWords ? (
-              <span
-                className={`${styles['verify-tips']} ${passFlag ? styles['suc-bg'] : styles['err-bg']}`}
-              >
-                {tipWords}
-              </span>
-            ) : null}
-          </div>
+              {statusMessage}
+            </span>
+          ) : null}
         </div>
-      ) : null}
+      </div>
 
       <div
         ref={barAreaRef}
@@ -382,17 +377,16 @@ export default function VerifySlide({
           lineHeight: barSize.height,
         }}
       >
-        <span className={styles['verify-msg']}>{text}</span>
+        <span className={styles['verify-msg']}>{instructionText}</span>
         <div
           className={styles['verify-left-bar']}
           style={{
-            width: leftBarActualWidth,
+            width: progressActualWidth,
             height: barSize.height,
-            borderColor: leftBarBorderColor,
-            transition: transitionWidth,
+            borderColor: progressBorderColor,
+            transition: progressWidthTransition,
           }}
         >
-          <span className={styles['verify-msg']}>{finishText}</span>
           <div
             className={styles['verify-move-block']}
             onTouchStart={start}
@@ -400,33 +394,33 @@ export default function VerifySlide({
             style={{
               width: barSize.height,
               height: barSize.height,
-              backgroundColor: moveBlockBackgroundColor,
-              left: moveBlockLeft,
-              transition: transitionLeft,
+              backgroundColor: sliderHandleColor,
+              left: sliderOffset,
+              transition: sliderOffsetTransition,
             }}
           >
             <i
-              className={`${styles['verify-icon']} ${styles[iconClass]}`}
+              className={`${styles['verify-icon']} ${styles[sliderIconClass]}`}
               style={{ color: iconColor }}
             >
-              {iconClass === 'icon-check'
+              {sliderIconClass === 'icon-check'
                 ? '✓'
-                : iconClass === 'icon-close'
+                : sliderIconClass === 'icon-close'
                   ? '✕'
                   : '→'}
             </i>
-            {type === '2' && captcha ? (
+            {captchaData ? (
               <div
                 className={styles['verify-sub-block']}
                 style={{
                   width: `${sliderBlockWidth}px`,
-                  height: `${imageHeight}px`,
-                  top: `-${imageHeight + vSpace}px`,
-                  backgroundSize: `${renderedImgWidth}px ${imageHeight}px`,
+                  height: `${panelHeight}px`,
+                  top: `-${panelHeight + vSpace}px`,
+                  backgroundSize: `${panelWidth}px ${panelHeight}px`,
                 }}
               >
                 <img
-                  src={`data:image/png;base64,${captcha.sliderImage}`}
+                  src={`data:image/png;base64,${captchaData.sliderImage}`}
                   alt=""
                   className={styles['verify-slider-image']}
                 />

@@ -44,7 +44,6 @@ export interface VerifySuccessPayload {
 export interface VerifySlideProps {
   mode?: VerifyMode
   visible?: boolean
-  type?: string
   vSpace?: number
   explain?: string
   imgSize?: SizeConfig

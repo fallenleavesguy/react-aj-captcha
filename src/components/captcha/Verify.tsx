@@ -80,7 +80,6 @@ const Verify = forwardRef<VerifyRef, VerifyProps>(function Verify(
           <VerifySlide
             mode={mode}
             visible={showBox}
-            type="2"
             vSpace={vSpace}
             explain={explain}
             imgSize={imgSize}
