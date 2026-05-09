@@ -1,78 +1,46 @@
-import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
+import { forwardRef } from 'react'
 import VerifySlide from './VerifySlide'
 import styles from './Verify.module.scss'
-import type {
-  VerifyApiHandlers,
-  VerifyMode,
-  VerifyRef,
-  VerifySlideProps,
-  VerifySuccessPayload,
-} from './types'
-
-interface VerifyProps {
-  mode?: VerifyMode
-  vSpace?: number
-  explain?: string
-  imgSize?: VerifySlideProps['imgSize']
-  blockSize?: VerifySlideProps['blockSize']
-  barSize?: VerifySlideProps['barSize']
-  onReady?: () => void
-  onSuccess?: (payload: VerifySuccessPayload) => void
-  onError?: () => void
-  onGetCaptcha: VerifyApiHandlers['onGetCaptcha']
-  onVerifyCaptcha: VerifyApiHandlers['onVerifyCaptcha']
-}
+import type { VerifyProps, VerifyRef } from './types'
+import { useVerify } from './useVerify'
 
 const Verify = forwardRef<VerifyRef, VerifyProps>(function Verify(
-  {
-    mode = 'pop',
-    vSpace,
-    explain,
-    imgSize,
-    blockSize,
-    barSize,
-    onReady,
-    onSuccess,
-    onError,
-    onGetCaptcha,
-    onVerifyCaptcha,
-  },
+  props,
   ref,
 ) {
-  const [clickShow, setClickShow] = useState(false)
-  const slideRefreshRef = useRef<(() => void) | null>(null)
-
-  const closeBox = () => {
-    setClickShow(false)
-  }
-
-  useImperativeHandle(ref, () => ({
-    show: () => {
-      if (mode === 'pop') {
-        setClickShow(true)
-      }
-    },
-    close: closeBox,
-  }))
-
-  const showBox = mode === 'pop' ? clickShow : true
+  const {
+    mode,
+    imgSize,
+    closeVerify,
+    hideVerify,
+    registerRefresh,
+    isVisible,
+    containerClassName,
+    boxClassName,
+    isPopupMode,
+    boxMaxWidth,
+  } = useVerify({
+    mode: props.mode,
+    imgSize: props.imgSize,
+    ref,
+  })
 
   return (
     <div
-      className={mode === 'pop' ? styles.mask : undefined}
-      style={{ display: showBox ? 'block' : 'none' }}
+      className={containerClassName ? styles[containerClassName] : undefined}
+      style={{ display: isVisible ? 'block' : 'none' }}
     >
       <div
-        className={mode === 'pop' ? styles['verify-box'] : undefined}
-        style={{ maxWidth: `${parseInt(imgSize?.width ?? '310', 10) + 30}px` }}
+        className={boxClassName ? styles[boxClassName] : undefined}
+        style={{ maxWidth: boxMaxWidth }}
       >
-        {mode === 'pop' ? (
+        {isPopupMode ? (
           <div className={styles['verify-box-top']}>
             请完成安全验证
             <button
               type="button"
               className={styles['verify-box-close']}
-              onClick={closeBox}
+              onClick={closeVerify}
             >
               ✕
             </button>
@@ -80,26 +48,24 @@ const Verify = forwardRef<VerifyRef, VerifyProps>(function Verify(
         ) : null}
         <div
           className={styles['verify-box-bottom']}
-          style={{ padding: mode === 'pop' ? '15px' : '0' }}
+          style={{ padding: isPopupMode ? '15px' : '0' }}
         >
           <VerifySlide
             mode={mode}
-            visible={showBox}
-            vSpace={vSpace}
-            explain={explain}
+            visible={isVisible}
+            vSpace={props.vSpace}
+            explain={props.explain}
             imgSize={imgSize}
-            blockSize={blockSize}
-            barSize={barSize}
-            onReady={onReady}
-            onSuccess={onSuccess}
-            onError={onError}
-            onGetCaptcha={onGetCaptcha}
-            onVerifyCaptcha={onVerifyCaptcha}
-            onRequestClose={closeBox}
-            onRequestHide={() => setClickShow(false)}
-            onRegisterRefresh={(refreshHandler) => {
-              slideRefreshRef.current = refreshHandler
-            }}
+            blockSize={props.blockSize}
+            barSize={props.barSize}
+            onReady={props.onReady}
+            onSuccess={props.onSuccess}
+            onError={props.onError}
+            onGetCaptcha={props.onGetCaptcha}
+            onVerifyCaptcha={props.onVerifyCaptcha}
+            onRequestClose={closeVerify}
+            onRequestHide={hideVerify}
+            onRegisterRefresh={registerRefresh}
           />
         </div>
       </div>

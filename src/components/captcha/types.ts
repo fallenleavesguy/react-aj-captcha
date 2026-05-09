@@ -46,6 +46,18 @@ export interface VerifyApiHandlers {
   onVerifyCaptcha: (payload: CaptchaCheckPayload) => Promise<boolean>
 }
 
+export interface VerifyProps extends VerifyApiHandlers {
+  mode?: VerifyMode
+  vSpace?: number
+  explain?: string
+  imgSize?: SizeConfig
+  blockSize?: SizeConfig
+  barSize?: SizeConfig
+  onReady?: () => void
+  onSuccess?: (payload: VerifySuccessPayload) => void
+  onError?: () => void
+}
+
 export interface VerifySlideProps {
   mode?: VerifyMode
   visible?: boolean
